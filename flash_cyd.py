@@ -1,19 +1,41 @@
 """Flash MicroPython + upload code to CYD for Teaching Machine.
 
 Usage:
-  python flash_cyd.py download  -- download MicroPython firmware
-  python flash_cyd.py erase     -- erase CYD flash
-  python flash_cyd.py flash     -- flash MicroPython firmware
-  python flash_cyd.py upload    -- upload boot.py, main.py, ili9341.py via ampy
-  python flash_cyd.py mac       -- read CYD STA MAC address via REPL
-  python flash_cyd.py all       -- erase + flash + upload
+  python flash_cyd.py download            -- download MicroPython firmware
+  python flash_cyd.py erase               -- erase CYD flash
+  python flash_cyd.py flash               -- flash MicroPython firmware
+  python flash_cyd.py upload              -- upload boot.py, main.py, ili9341.py via ampy
+  python flash_cyd.py mac                 -- read CYD STA MAC address via REPL
+  python flash_cyd.py all                 -- erase + flash + upload
+  python flash_cyd.py --port /dev/ttyUSB0 upload  -- use a specific serial port
 """
 import subprocess
 import sys
 import os
+import platform
 import time
 
-PORT = "COM5"
+
+def detect_port():
+    """Auto-detect the CYD serial port, or return a platform default."""
+    try:
+        import serial.tools.list_ports
+        for p in serial.tools.list_ports.comports():
+            # CH340 is the USB-serial chip on the CYD
+            if "CH340" in (p.description or "") or "CH340" in (p.manufacturer or ""):
+                return p.device
+    except ImportError:
+        pass
+    # Fall back to platform default
+    if platform.system() == "Windows":
+        return "COM5"
+    # Linux: /dev/ttyUSB0 is the most common CH340 path
+    if os.path.exists("/dev/ttyUSB0"):
+        return "/dev/ttyUSB0"
+    return "/dev/ttyUSB0"
+
+
+PORT = detect_port()
 BAUD = 460800
 FIRMWARE_URL = "https://micropython.org/resources/firmware/ESP32_GENERIC-20241025-v1.24.0.bin"
 FIRMWARE_FILE = os.path.join(os.path.dirname(__file__), "micropython-esp32.bin")
@@ -90,11 +112,23 @@ def mac():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+
+    # Handle --port flag
+    if "--port" in args:
+        idx = args.index("--port")
+        if idx + 1 >= len(args):
+            print("ERROR: --port requires a value (e.g. --port /dev/ttyUSB0)")
+            sys.exit(1)
+        PORT = args[idx + 1]
+        args = args[:idx] + args[idx + 2:]
+
+    if not args:
         print(__doc__)
         sys.exit(1)
 
-    cmd = sys.argv[1]
+    print("Using port: %s" % PORT)
+    cmd = args[0]
 
     if cmd == "download":
         download()

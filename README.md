@@ -19,7 +19,23 @@ Install these Python packages on your PC:
 pip install esptool adafruit-ampy pyserial
 ```
 
+**Linux only (one-time):** Add yourself to the `dialout` group for serial access, then log out and back in:
+
+```bash
+sudo usermod -a -G dialout $USER
+```
+
 ## Flashing a New CYD
+
+The `flash_cyd.py` script auto-detects the CYD's CH340 serial port. If auto-detection fails, pass the port explicitly with `--port`:
+
+```bash
+# Windows (typically COM5)
+python flash_cyd.py --port COM5 all
+
+# Linux (typically /dev/ttyUSB0)
+python flash_cyd.py --port /dev/ttyUSB0 all
+```
 
 ### 1. Download MicroPython firmware
 
@@ -31,7 +47,7 @@ This saves `micropython-esp32.bin` locally (ESP32_GENERIC v1.24.0).
 
 ### 2. Erase and flash firmware
 
-Connect the CYD via USB. It should appear as a COM port (default: COM5 — edit `PORT` in `flash_cyd.py` if yours differs).
+Connect the CYD via USB (the micro-USB port).
 
 ```bash
 python flash_cyd.py erase
@@ -51,6 +67,12 @@ python flash_cyd.py upload
 ```
 
 This transfers `boot.py`, `main.py`, and `ili9341.py` to the CYD's flash filesystem via ampy.
+
+To re-upload after editing code (no need to erase/flash again):
+
+```bash
+python flash_cyd.py upload
+```
 
 ### 4. Reset the board
 
