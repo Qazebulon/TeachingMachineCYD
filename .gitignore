@@ -10,6 +10,9 @@ Thumbs.db
 __pycache__/
 *.pyc
 
+# Firmware binaries (download locally, don't commit)
+micropython-esp32.bin
+
 # Local notes
 notes.md
 tmp/
