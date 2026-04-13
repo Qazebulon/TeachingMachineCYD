@@ -1,0 +1,15 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
+
+# MicroPython
+__pycache__/
+*.pyc
+
+# Local notes
+notes.md
+tmp/

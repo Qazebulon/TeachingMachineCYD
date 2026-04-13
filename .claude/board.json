@@ -1,0 +1,16 @@
+{
+  "owner": "Qazebulon",
+  "repo": "TeachingMachineCYD",
+  "project_number": 8,
+  "project_id": "PVT_kwHOAUTW1s4BUha7",
+  "status_field_id": "PVTSSF_lAHOAUTW1s4BUha7zhBo93U",
+  "statuses": {
+    "Brainstorm": "3db1e185",
+    "Blocked": "9210b68c",
+    "Backlog": "93cc92fa",
+    "Refined": "c28025cf",
+    "Doing": "6b14c1ed",
+    "Review": "fb8be512",
+    "Done": "eb9a4b9a"
+  }
+}

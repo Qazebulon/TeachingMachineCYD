@@ -1,0 +1,56 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/session-start.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/prompt-submit.sh"
+          },
+          {
+            "type": "command",
+            "command": "echo 'STOP. VERIFY FIRST: Before any fix, edit, commit, diagnosis, or suggestion === (1) search memory or docs for this topic, (2) cite the source or say not documented. Run the exact command or cite documented evidence. If you say you will do something, create the enforcement mechanism now. No exceptions.'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash $HOME/.claude/hooks/skills-dirty-check.sh"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe -Command \"[System.Media.SystemSounds]::Exclamation.Play(); Start-Sleep -Milliseconds 500\""
+          }
+        ]
+      }
+    ]
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash $HOME/.claude/hooks/statusline.sh"
+  }
+}
