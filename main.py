@@ -32,6 +32,12 @@ enow.active(True)
 YD_MAC = b'\x28\x37\x2f\xe6\xd7\x74'   # YD-ESP32-S3 keyboard sender
 enow.add_peer(YD_MAC)
 
+# Broadcast discovery beacon so YD Host auto-registers this CYD
+BCAST = b'\xff\xff\xff\xff\xff\xff'
+enow.add_peer(BCAST)
+enow.send(BCAST, b'CYD\x01TeachMachine')
+enow.del_peer(BCAST)
+
 # ── Layout Constants ──────────────────────────────────────
 TILE = 8
 MAP_W = 26                       # tiles (26*8=208px for snake area)
