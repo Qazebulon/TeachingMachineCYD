@@ -174,7 +174,7 @@ def draw_sidebar():
 
 def draw_lv(lv):
     t = "TOP!" if lv >= 141 else "Lv:%d" % lv
-    lcd.text(pad(t, 7), SB_X + 6, 4, GRN, BLK, 2)
+    lcd.text(pad(t, 6), SB_X + 6, 4, GRN, BLK, 2)
 
 def draw_name_sb(n):
     lcd.text(pad(n, 13), SB_X + 6, 26, CYN, BLK, 1)
@@ -196,7 +196,7 @@ def draw_ans(a):
 
 def draw_err_msg():
     lcd.fill_rect(SB_X + 3, 152, SB_W - 3, 48, BLK)
-    lcd.text(pad("ERROR!", 7), SB_X + 6, 156, RED, BLK, 2)
+    lcd.text(pad("ERROR!", 6), SB_X + 6, 156, RED, BLK, 2)
     lcd.text("Press DEL", SB_X + 6, 180, YEL, BLK, 1)
 
 def clear_msg():
