@@ -113,11 +113,16 @@ Numpad keys serve double duty: they control the snake during gameplay and enter 
 - **Math level:** Starts at 1. Correct answers reduce a problem's weight (appears less often). Wrong answers reset it to maximum weight. The level rises as easier problems are mastered.
 - **Snake speed:** Every 10 berries the snake speeds up and grows faster. Snake difficulty is independent of math level.
 
-## MAC Address
+## Pairing (Magic Sync)
 
-The CYD expects ESP-NOW packets from the YD-ESP32-S3 at MAC `28:37:2f:e6:d7:74`. If your sender board has a different MAC, update `YD_MAC` in `main.py`.
+The Teaching Machine no longer hardcodes a sender MAC. It implements the symmetric magic-pairing protocol from `specs/ESP32_Clone_Control/sanity/PROTOCOL.md` (Clone Control v0, magic header `ECC\x01`):
 
-To read your CYD's MAC (needed by the sender):
+- Identifies as role `'C'` (CYD), name `teach-machine`.
+- Broadcasts a beacon every 2s.
+- Pairs automatically with any sender that broadcasts a counterpart-role beacon (role `'M'`, the keyboard host).
+- HID frames from a paired peer continue to be raw 8-byte boot-keyboard reports — no migration needed on the host side beyond emitting the magic-sync beacon.
+
+To read the CYD's MAC for diagnostic purposes:
 
 ```bash
 python flash_cyd.py mac

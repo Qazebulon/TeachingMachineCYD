@@ -1,6 +1,6 @@
 # main.py -- Teaching Machine CYD
 # Port of TeachingMachinePython to ESP32 CYD (320x240 ILI9341)
-# Receives keyboard via ESP-NOW from YD-ESP32-S3 (8-byte HID reports)
+# Receives keyboard via ESP-NOW from a magic-paired keyboard host (8-byte HID).
 # Snake game + adaptive math drill with per-student progress
 
 import network
@@ -24,19 +24,55 @@ led_r = Pin(4, Pin.OUT, value=1)
 led_g = Pin(16, Pin.OUT, value=1)
 led_b = Pin(17, Pin.OUT, value=1)
 
-# ESP-NOW
+# ── ESP-NOW magic-pairing (ECC\x01 / Clone Control v0) ────
+# Protocol: specs/ESP32_Clone_Control/sanity/PROTOCOL.md
+# Pairing uses ECC\x01 beacons broadcast every 2s; on receiving a
+# counterpart-role beacon we register the sender as a peer.
+# HID frames from a paired peer are raw 8-byte boot-keyboard reports
+# (current YD-Host format — Path A: pair via ECC\x01, data stays raw).
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
+wlan.config(channel=1)
 enow = espnow.ESPNow()
 enow.active(True)
-YD_MAC = b'\x28\x37\x2f\xe6\xd7\x74'   # YD-ESP32-S3 keyboard sender
-enow.add_peer(YD_MAC)
 
-# Broadcast discovery beacon so YD Host auto-registers this CYD
-BCAST = b'\xff\xff\xff\xff\xff\xff'
-enow.add_peer(BCAST)
-enow.send(BCAST, b'CYD\x01TeachMachine')
-enow.del_peer(BCAST)
+_MAGIC       = b"ECC\x01"
+_KIND_BEACON = 0x01
+_KIND_DATA   = 0x02
+_MY_NAME     = "teach-machine"
+_MY_ROLE     = b'C'        # CYD
+_PEER_ROLE   = b'M'        # mini / keyboard host
+_BCAST       = b'\xff\xff\xff\xff\xff\xff'
+_BEACON_MS   = 2000
+
+enow.add_peer(_BCAST)
+_paired = set()
+_last_beacon_tx = 0
+
+def _make_beacon():
+    return _MAGIC + bytes([_KIND_BEACON]) + _MY_ROLE + _MY_NAME.encode() + b"\x00"
+
+def _emit_beacon_if_due():
+    global _last_beacon_tx
+    now = time.ticks_ms()
+    if time.ticks_diff(now, _last_beacon_tx) >= _BEACON_MS:
+        try:
+            enow.send(_BCAST, _make_beacon(), False)
+        except OSError:
+            pass
+        _last_beacon_tx = now
+
+def _try_pair(host, role, name):
+    if role != _PEER_ROLE or host in _paired:
+        return
+    try:
+        if host not in [bytes(p[0]) for p in enow.get_peers()]:
+            enow.add_peer(host)
+    except Exception:
+        pass
+    _paired.add(host)
+    mac = ":".join("%02X" % b for b in host)
+    print("Paired with %s %s @ %s" % (role.decode(), name, mac))
 
 # ── Layout Constants ──────────────────────────────────────
 TILE = 8
@@ -132,10 +168,23 @@ def snd_timer():
 _prev = set()
 
 def read_input():
-    """Return (new_presses, held_keys, modifier_byte)."""
+    """Return (new_presses, held_keys, modifier_byte).
+    Pumps ESP-NOW: emits periodic beacon, auto-pairs counterpart-role
+    beacons, decodes raw 8-byte HID reports from paired peers."""
     global _prev
+    _emit_beacon_if_due()
     host, msg = enow.irecv(10)
-    if msg and len(msg) >= 8:
+    if not msg:
+        return set(), _prev, 0
+    # ECC\x01 pairing frame — handle then yield to next tick
+    if len(msg) >= 5 and msg[:4] == _MAGIC:
+        if msg[4] == _KIND_BEACON and len(msg) >= 7:
+            role = bytes([msg[5]])
+            name = msg[6:].split(b"\x00", 1)[0].decode("utf-8", "replace")
+            _try_pair(host, role, name)
+        return set(), _prev, 0
+    # Raw 8-byte HID boot-keyboard report
+    if len(msg) >= 8:
         cur = set(k for k in msg[2:8] if k)
         new = cur - _prev
         _prev = cur
